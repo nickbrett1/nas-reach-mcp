@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 HOST_NETWORK = "host"
@@ -40,7 +40,7 @@ def is_loopback(ip: str | None) -> bool:
 
 
 def _utcnow() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 @dataclass(frozen=True)

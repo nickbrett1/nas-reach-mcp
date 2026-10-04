@@ -22,7 +22,7 @@ from __future__ import annotations
 import socket
 import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -44,7 +44,7 @@ MCP_PATHS = ("/mcp", "/sse", "/messages")
 
 
 def _utcnow() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 @dataclass(frozen=True)

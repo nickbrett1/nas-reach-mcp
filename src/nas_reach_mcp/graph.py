@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from .inventory import LOOPBACK_ADDRESS, Container, Inventory, is_loopback
 from .vantage import Vantage
@@ -44,7 +44,7 @@ DEFAULT_SCHEME = "http"
 
 
 def _utcnow() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 @dataclass(frozen=True)

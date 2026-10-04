@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from nas_reach_mcp import vantage as vantage_module
-from nas_reach_mcp.vantage import VantageError, detect_self, parse
+from nas_reach_mcp.vantage import VantageError, detect_self, own_container_name, parse
 
 
 @pytest.mark.parametrize(
@@ -37,6 +37,17 @@ def test_parse_rejects_bad_specs(spec):
 def test_self_alias_is_recorded_as_self_not_host():
     assert parse("self").spec == "self"
     assert parse("host").spec == "host"
+
+
+def test_own_container_name_honours_the_override(monkeypatch, inventory):
+    monkeypatch.setenv("NAS_REACH_SELF_CONTAINER", "gateway")
+    assert own_container_name(inventory) == "gateway"
+
+
+def test_own_container_name_is_none_when_the_hostname_matches_no_container(monkeypatch, inventory):
+    monkeypatch.delenv("NAS_REACH_SELF_CONTAINER", raising=False)
+    monkeypatch.setattr(vantage_module.socket, "gethostname", lambda: "not-a-container-id")
+    assert own_container_name(inventory) is None
 
 
 def test_detect_self_where_this_process_is_not_a_visible_container(monkeypatch, inventory):

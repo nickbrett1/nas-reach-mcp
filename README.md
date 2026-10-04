@@ -123,10 +123,13 @@ docker compose up -d
 Because it runs `network_mode: host`, `check_reachable` probes from the
 **host** vantage. It confirms a host-vantage answer directly; for a network
 vantage it probes the container's bridge IP (which is what actually answers)
-while reporting the name-based address the caller would use, and it sets
-`confirms_requested_vantage: false` rather than implying success. Truly
-confirming from a container vantage requires running the probe inside that
-vantage (e.g. an ephemeral container on the target network).
+while reporting the name-based address the caller would use. The
+`confirms_requested_vantage` flag is derived from that evidence, not asserted:
+`confirmed_by` says which probe established it (`by-name` or `by-ip`), and when
+a probe answers but is not evidence for the requested vantage, `confirms_note`
+says why instead of leaving a bare `false`. Truly probing from inside a
+container vantage requires running inside that vantage (e.g. an ephemeral
+container on the target network), which this read-only tool does not do.
 
 ## Relationship to `nas-port-mcp`
 

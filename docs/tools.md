@@ -68,6 +68,23 @@ for three different diseases; they are separated here:
 — `serverInfo` from a single `initialize` handshake. Identity is part of
 liveness: an HTTP 200 from the wrong service is worse than a 404.
 
+## Confirming a vantage
+
+`check_reachable` reports the result as evidence, not as an assertion:
+
+| Field | Meaning |
+|---|---|
+| `confirms_requested_vantage` | does a successful probe demonstrate the requested vantage? derived from the probes, not from `vantage.kind` |
+| `confirmed_by` | `"by-name"` or `"by-ip"`, or `null` when nothing confirmed it |
+| `confirms_note` | present when the flag is `false` but a probe answered anyway: why that answer is not evidence for this vantage |
+| `probe_vantage` | the namespace the probe actually ran in, read from runtime state (`detect_self`), so it changes if the deployment shape does |
+
+A `network:*` / `container:*` vantage is confirmed by a successful by-IP probe,
+because the bridge IP is what actually answers; a by-name probe only counts when
+the probe runs in that same namespace. A `host` vantage is confirmed by the
+address it is defined by (a published host port), never by a bridge IP reached
+through host routing.
+
 ## Honest limits
 
 - **The probe runs in this process's network namespace.** Deployed

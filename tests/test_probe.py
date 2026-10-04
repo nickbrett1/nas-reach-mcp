@@ -55,6 +55,10 @@ def _closed_port() -> int:
         ("gateway", ("http", "gateway", 80, "/")),
         ("http://gateway:4000/health", ("http", "gateway", 4000, "/health")),
         ("https://gateway", ("https", "gateway", 443, "/")),
+        # A full URL whose host is a container name: the server splits exactly
+        # this to run the graph lookup against the host and keep the port/path
+        # for the by-IP fallback.
+        ("http://litellm:4000/health/liveliness", ("http", "litellm", 4000, "/health/liveliness")),
     ],
 )
 def test_split_target(target, expected):

@@ -38,7 +38,7 @@ from .graph import (
     resolve,
 )
 from .inventory import Inventory, load
-from .probe import probe
+from .probe import probe, split_target
 from .vantage import Vantage, VantageError, detect_self, parse
 
 # httpx logs every request at INFO. On a stdio MCP server that is pure noise:
@@ -75,6 +75,38 @@ def _vantage(spec: str, inventory: Inventory) -> tuple[Vantage, dict[str, Any]]:
         vantage, detection = detect_self(inventory)
         return vantage, detection
     return vantage, {}
+
+
+def _probe_vantage_label(vantage: Vantage, detection: dict[str, Any]) -> str:
+    """Describe the namespace the probe actually runs in, from runtime state.
+
+    This is a fact read from ``detect_self``, not a claim baked into the code:
+    if the deployment shape changes -- a bridge container instead of
+    ``network_mode: host`` -- this string changes with it, and so does the
+    vantage the by-name evidence is measured against.
+    """
+    container = detection.get("container")
+    if container is None:
+        return f"self (this process is not a visible Docker container; vantage {vantage.label})"
+    if detection.get("detection") == "host-network-container":
+        return f"self (this container {container!r}; network_mode: host; vantage {vantage.label})"
+    return f"self (this container {container!r}; vantage {vantage.label})"
+
+
+def _by_name_evidence_applies(requested: Vantage, probe_vantage: Vantage) -> bool:
+    """Is a successful *by-name* probe evidence for the requested vantage?
+
+    The probe runs in the process's own namespace, and a by-name address is the
+    address *from a vantage*. So a by-name success only confirms the requested
+    vantage when the two are the same network namespace -- which is why a
+    host-network process cannot confirm a ``network:*`` vantage by name, only
+    by IP.
+    """
+    if requested.kind == "host":
+        return probe_vantage.kind == "host"
+    if requested.kind == "network":
+        return probe_vantage.kind == "network" and probe_vantage.target == requested.target
+    return probe_vantage.kind == "container" and probe_vantage.target == requested.target
 
 
 @mcp.tool()
@@ -230,6 +262,13 @@ def check_reachable(name_or_url: str, from_vantage: str, identity: bool = True) 
     except VantageError as exc:
         return {"error": "VantageError", "detail": str(exc)}
 
+    # The vantage the *probe* runs in, read from runtime state. Reused when the
+    # caller already asked for 'self'; otherwise detected independently.
+    if vantage.spec == "self":
+        own_vantage, own_detection = vantage, detection
+    else:
+        own_vantage, own_detection = detect_self(inventory)
+
     notes: list[str] = []
     resolution = None
     candidate_url: str | None = None
@@ -237,7 +276,32 @@ def check_reachable(name_or_url: str, from_vantage: str, identity: bool = True) 
 
     if "://" in name_or_url:
         candidate_url = name_or_url
-        notes.append("target was a URL, so it was probed as given; no graph lookup was done")
+        scheme, host, url_port, url_path = split_target(name_or_url)
+        container = inventory.containers.get(host)
+        if container is None:
+            notes.append(
+                f"target was a URL; its host {host!r} is not a known container, so it "
+                "was probed as given and no graph lookup was done"
+            )
+        else:
+            # A URL's host can name a container, so it gets the same graph lookup
+            # and by-IP fallback a bare name would. The URL itself is still what
+            # the primary probe targets, and the fallback keeps its port and path
+            # so the same endpoint is measured.
+            resolution = resolve(inventory, host, vantage, DEFAULT_HOSTNAME)
+            notes.append(f"target was a URL; the graph lookup was done against its host {host!r}")
+            ip = None
+            if vantage.kind == "network":
+                ip = container.ip_on(vantage.target or "")
+            if ip is None and container.ips:
+                ip = next(iter(container.ips.values()))
+            if ip:
+                ip_target = f"{scheme}://{ip}:{url_port}{url_path}"
+                notes.append(
+                    f"also probing {ip_target}: the probe runs in this process's "
+                    "network namespace, where a container name resolves only if that "
+                    "container is on the same network"
+                )
     else:
         resolution = resolve(inventory, name_or_url, vantage, DEFAULT_HOSTNAME)
         candidate_url = resolution.url
@@ -278,19 +342,48 @@ def check_reachable(name_or_url: str, from_vantage: str, identity: bool = True) 
     fallback = probe(ip_target, identity=identity) if ip_target else None
     if fallback is not None and fallback.outcome == "ok" and (primary is None or primary.outcome != "ok"):
         notes.append(
-            "the by-IP probe succeeded where the by-name probe did not; that "
-            "difference is the vantage point, not a fault"
+            "the by-IP probe succeeded where the primary (by-name) probe did not; "
+            "that difference is the vantage point, not a fault"
         )
 
-    confirms = vantage.kind == "host" and primary is not None and primary.outcome == "ok"
+    by_name_ok = primary is not None and primary.outcome == "ok"
+    by_ip_ok = fallback is not None and fallback.outcome == "ok"
+
+    # The flag is derived from the evidence, not from ``vantage.kind``: a
+    # successful by-name probe confirms the requested vantage only when the
+    # probe runs in that same namespace, and a successful by-IP probe confirms a
+    # network/container vantage because the bridge IP is what actually answers.
+    confirmed_by: str | None = None
+    if by_name_ok and _by_name_evidence_applies(vantage, own_vantage):
+        confirmed_by = "by-name"
+    elif by_ip_ok and vantage.kind in ("network", "container"):
+        confirmed_by = "by-ip"
+    confirms = confirmed_by is not None
+
+    # Never leave a bare ``false`` next to a successful probe that a reader would
+    # take as proof: say why the ok probe is not evidence for this vantage.
+    confirms_note: str | None = None
+    if not confirms and by_name_ok:
+        confirms_note = (
+            f"the by-name probe returned ok, but it ran from the {own_vantage.label!r} "
+            f"namespace rather than the requested {vantage.label!r} vantage, so it is "
+            "not evidence for the requested vantage"
+        )
+    elif not confirms and by_ip_ok:
+        confirms_note = (
+            "the by-IP probe returned ok, but it reached a bridge IP through host "
+            f"routing rather than the address of the requested {vantage.label!r} vantage"
+        )
 
     return {
         "service": name_or_url,
         "from": vantage.label,
         "vantage_description": vantage.describe(inventory),
         "detection": detection,
-        "probe_vantage": "self (this container; deployed network_mode: host)",
+        "probe_vantage": _probe_vantage_label(own_vantage, own_detection),
         "confirms_requested_vantage": confirms,
+        "confirmed_by": confirmed_by,
+        "confirms_note": confirms_note,
         "candidate_url": candidate_url,
         "probe": primary.as_dict() if primary else None,
         "by_ip_probe": fallback.as_dict() if fallback else None,

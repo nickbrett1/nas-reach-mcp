@@ -1,0 +1,7 @@
+[
+  {"Name": "svc_net", "Id": "bb01", "Driver": "bridge", "Containers": {}},
+  {"Name": "shelf_net", "Id": "bb02", "Driver": "bridge", "Containers": {}},
+  {"Name": "registry_net", "Id": "bb03", "Driver": "bridge", "Containers": {}},
+  {"Name": "edge_net", "Id": "bb04", "Driver": "bridge", "Containers": {}},
+  {"Name": "host", "Id": "bb05", "Driver": "host", "Containers": {}}
+]

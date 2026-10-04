@@ -1,0 +1,9 @@
+{
+  "Name": "shelf_net",
+  "Id": "bb02",
+  "Driver": "bridge",
+  "Internal": false,
+  "Containers": {
+    "aaaa03": {"Name": "shelf", "IPv4Address": "192.168.250.2/16", "Aliases": null}
+  }
+}

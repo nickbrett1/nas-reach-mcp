@@ -1,0 +1,10 @@
+{
+  "Name": "registry_net",
+  "Id": "bb03",
+  "Driver": "bridge",
+  "Internal": false,
+  "Containers": {
+    "aaaa02": {"Name": "registry", "IPv4Address": "192.168.251.2/16", "Aliases": null},
+    "aaaa04": {"Name": "toolbox-api", "IPv4Address": "192.168.251.3/16", "Aliases": null}
+  }
+}

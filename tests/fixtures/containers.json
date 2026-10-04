@@ -1,0 +1,89 @@
+[
+  {
+    "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa01",
+    "Names": ["/gateway"],
+    "Image": "ghcr.io/example/gateway:latest",
+    "State": "running",
+    "Status": "Up 3 days",
+    "HostConfig": {"NetworkMode": "svc_net"},
+    "NetworkSettings": {"Networks": {"svc_net": {"IPAddress": "172.31.0.21"}}},
+    "Ports": [{"IP": "0.0.0.0", "PrivatePort": 4000, "PublicPort": 4000, "Type": "tcp"}],
+    "Labels": {"com.docker.compose.project": "gateway"}
+  },
+  {
+    "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa02",
+    "Names": ["/registry"],
+    "Image": "ghcr.io/example/registry:latest",
+    "State": "running",
+    "Status": "Up 3 days",
+    "HostConfig": {"NetworkMode": "svc_net"},
+    "NetworkSettings": {
+      "Networks": {
+        "svc_net": {"IPAddress": "172.31.0.20"},
+        "registry_net": {"IPAddress": "192.168.251.2"}
+      }
+    },
+    "Ports": [{"IP": "0.0.0.0", "PrivatePort": 3000, "PublicPort": 8781, "Type": "tcp"}],
+    "Labels": {"com.docker.compose.project": "registry"}
+  },
+  {
+    "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa03",
+    "Names": ["/shelf"],
+    "Image": "ghcr.io/example/shelf:latest",
+    "State": "running",
+    "Status": "Up 2 days",
+    "HostConfig": {"NetworkMode": "svc_net"},
+    "NetworkSettings": {
+      "Networks": {
+        "svc_net": {"IPAddress": "172.31.0.30"},
+        "shelf_net": {"IPAddress": "192.168.250.2"}
+      }
+    },
+    "Ports": [{"IP": "0.0.0.0", "PrivatePort": 3000, "PublicPort": 3005, "Type": "tcp"}],
+    "Labels": {"com.docker.compose.project": "shelf"}
+  },
+  {
+    "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa04",
+    "Names": ["/toolbox-api"],
+    "Image": "ghcr.io/example/toolbox-api:latest",
+    "State": "running",
+    "Status": "Up 3 days",
+    "HostConfig": {"NetworkMode": "registry_net"},
+    "NetworkSettings": {"Networks": {"registry_net": {"IPAddress": "192.168.251.3"}}},
+    "Ports": [{"IP": "127.0.0.1", "PrivatePort": 8797, "PublicPort": 8797, "Type": "tcp"}],
+    "Labels": {"com.docker.compose.project": "registry"}
+  },
+  {
+    "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa05",
+    "Names": ["/edge"],
+    "Image": "ghcr.io/example/edge:latest",
+    "State": "running",
+    "Status": "Up 5 hours",
+    "HostConfig": {"NetworkMode": "edge_net"},
+    "NetworkSettings": {"Networks": {"edge_net": {"IPAddress": "192.168.252.2"}}},
+    "Ports": [{"IP": "0.0.0.0", "PrivatePort": 8080, "PublicPort": 3080, "Type": "tcp"}],
+    "Labels": {"com.docker.compose.project": "edge"}
+  },
+  {
+    "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa06",
+    "Names": ["/db"],
+    "Image": "postgres:16",
+    "State": "running",
+    "Status": "Up 3 days",
+    "HostConfig": {"NetworkMode": "svc_net"},
+    "NetworkSettings": {"Networks": {"svc_net": {"IPAddress": "172.31.0.31"}}},
+    "Ports": [],
+    "Labels": {"com.docker.compose.project": "gateway"}
+  },
+  {
+    "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa07",
+    "Names": ["/metrics"],
+    "Image": "ghcr.io/example/metrics:latest",
+    "State": "running",
+    "Status": "Up 6 days",
+    "HostConfig": {"NetworkMode": "host"},
+    "NetworkSettings": {"Networks": {}},
+    "Ports": [],
+    "Labels": {"com.docker.compose.project": "metrics"}
+  }
+]

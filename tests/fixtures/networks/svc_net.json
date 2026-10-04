@@ -1,0 +1,12 @@
+{
+  "Name": "svc_net",
+  "Id": "bb01",
+  "Driver": "bridge",
+  "Internal": false,
+  "Containers": {
+    "aaaa01": {"Name": "gateway", "IPv4Address": "172.31.0.21/16", "Aliases": null},
+    "aaaa02": {"Name": "registry", "IPv4Address": "172.31.0.20/16", "Aliases": null},
+    "aaaa03": {"Name": "shelf", "IPv4Address": "172.31.0.30/16", "Aliases": null},
+    "aaaa06": {"Name": "db", "IPv4Address": "172.31.0.31/16", "Aliases": null}
+  }
+}

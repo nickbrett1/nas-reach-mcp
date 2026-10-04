@@ -1,0 +1,9 @@
+{
+  "Name": "edge_net",
+  "Id": "bb04",
+  "Driver": "bridge",
+  "Internal": false,
+  "Containers": {
+    "aaaa05": {"Name": "edge", "IPv4Address": "192.168.252.2/16", "Aliases": null}
+  }
+}

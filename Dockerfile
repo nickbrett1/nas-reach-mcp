@@ -21,10 +21,19 @@ RUN python -m venv /opt/venv \
          /opt/venv/bin/pip install --no-cache-dir .; \
        fi
 COPY . .
-RUN if [ -f requirements.txt ]; then \
+# Reinstall the package from the real source tree. The build stage above touches
+# an empty placeholder __init__.py so `pip install .` can resolve metadata, and
+# that empty file is what lands in the venv. Two things made the plain reinstall
+# here a no-op: the same 0.1.0 was already installed (so pip skipped it), and
+# setuptools had cached the empty __init__.py in build/lib, which it then
+# considered newer than the source and skipped re-copying. server.py does
+# `from . import __version__`, so the server died at import. Drop the stale
+# build output and force the reinstall so the copy in the venv is real.
+RUN rm -rf /app/build /app/src/*.egg-info \
+    && if [ -f requirements.txt ]; then \
       /opt/venv/bin/pip install --no-cache-dir -r requirements.txt; \
     elif [ -f pyproject.toml ]; then \
-      /opt/venv/bin/pip install --no-cache-dir --no-deps .; \
+      /opt/venv/bin/pip install --no-cache-dir --force-reinstall --no-deps .; \
     fi
 
 FROM python:3.12-slim

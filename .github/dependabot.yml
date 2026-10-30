@@ -24,3 +24,12 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    # Both ceilings are load-bearing: mcp 2.x drops streamablehttp_client, which
+    # mcpo 0.0.20 imports; fastapi >=0.145 drops the **extra catch-all that
+    # absorbed the ssl_certfile kwarg mcpo passes into FastAPI(). Either bump
+    # crash-loops the container at boot. See pyproject.toml.
+    ignore:
+      - dependency-name: "mcp"
+        versions: [">=2.0.0"]
+      - dependency-name: "fastapi"
+        versions: [">=0.145.0"]

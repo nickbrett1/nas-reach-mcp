@@ -5,7 +5,18 @@ description = "What is the address of service X, from vantage point Y, and is it
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "mcp>=1.2.0",
+    # mcp 2.x removed mcp.client.streamable_http.streamablehttp_client, which
+    # mcpo 0.0.20 imports at startup, so an unpinned mcp>=1.2.0 resolved to
+    # 2.3.0 and every boot died with ImportError. Hold <2.0.0 until mcpo ships
+    # a 2.x-compatible release. Dependabot ignore rule blocks re-loosening.
+    "mcp>=1.2.0,<2.0.0",
+    # mcpo 0.0.20 passes ssl_certfile/ssl_keyfile straight into the FastAPI()
+    # constructor. FastAPI never declared those for FastAPI() - they were only
+    # tolerated by a **extra catch-all, which FastAPI 0.145.0 removed. Anything
+    # >=0.145 therefore dies at boot with "TypeError: FastAPI.__init__() got an
+    # unexpected keyword argument 'ssl_certfile'". Hold <0.145 until mcpo stops
+    # forwarding those kwargs (it passes them to uvicorn.run() correctly).
+    "fastapi<0.145",
     "mcpo>=0.0.20",
     "httpx>=0.27.0"
 ]
